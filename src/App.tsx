@@ -1,35 +1,90 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from 'react';
+import { User, FileText, Camera, CreditCard, Clipboard } from 'lucide-react';
+import { Header } from './components/common/Header';
+import { NavigationTabs } from './components/common/NavigationTabs';
+import { Dashboard } from './components/dashboard/Dashboard';
+import { UsuariosTab } from './components/usuarios/UsuariosTab';
+import { MatriculaTab } from './components/matricula/MatriculaTab';
+import { AsistenciaTab } from './components/asistencia/AsistenciaTab';
+import { CarnetTab } from './components/carnet/CarnetTab';
+import { ExamenesTab } from './components/examenes/ExamenesTab';
+import { useAppData } from './hooks/useAppData';
+import './App.css';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const {
+    users,
+    enrollments,
+    attendance,
+    exams,
+    stats,
+    addUser,
+    updateUser,
+    deleteUser,
+    addEnrollment,
+    updateEnrollment,
+    deleteEnrollment,
+    addAttendance,
+    addExam,
+    updateExam,
+    deleteExam,
+  } = useAppData();
+
+  const tabs = [
+    { id: 'dashboard', label: 'Dashboard', icon: User },
+    { id: 'usuarios', label: 'Usuarios', icon: User },
+    { id: 'matricula', label: 'Matrícula', icon: FileText },
+    { id: 'asistencia', label: 'Asistencia QR', icon: Camera },
+    { id: 'carnet', label: 'Carnet', icon: CreditCard },
+    { id: 'examenes', label: 'Exámenes', icon: Clipboard },
+  ];
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <NavigationTabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
+
+        {activeTab === 'dashboard' && (
+          <Dashboard stats={stats} enrollments={enrollments} exams={exams} />
+        )}
+
+        {activeTab === 'usuarios' && (
+          <UsuariosTab
+            users={users}
+            onAddUser={addUser}
+            onUpdateUser={updateUser}
+            onDeleteUser={deleteUser}
+          />
+        )}
+
+        {activeTab === 'matricula' && (
+          <MatriculaTab
+            enrollments={enrollments}
+            onAddEnrollment={addEnrollment}
+            onUpdateEnrollment={updateEnrollment}
+            onDeleteEnrollment={deleteEnrollment}
+          />
+        )}
+
+        {activeTab === 'asistencia' && (
+          <AsistenciaTab attendance={attendance} onAddAttendance={addAttendance} />
+        )}
+
+        {activeTab === 'carnet' && <CarnetTab users={users} />}
+
+        {activeTab === 'examenes' && (
+          <ExamenesTab
+            exams={exams}
+            onAddExam={addExam}
+            onUpdateExam={updateExam}
+            onDeleteExam={deleteExam}
+          />
+        )}
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    </div>
+  );
 }
 
-export default App
+export default App;
