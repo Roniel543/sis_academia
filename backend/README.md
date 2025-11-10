@@ -13,11 +13,27 @@ npm install
 ### 2. Configurar variables de entorno
 Crea un archivo `.env` en la carpeta `backend/` y configura:
 ```env
-DATABASE_URL="postgresql://usuario:contraseña@localhost:5432/sistema_academico"
+# Base de datos
+DATABASE_URL="postgresql://usuario:contraseña@localhost:5432/sistema_academico_vexler"
+
+# Servidor
 PORT=3000
+NODE_ENV=development
+
+# Frontend
 FRONTEND_URL="http://localhost:5173"
-JWT_SECRET="tu_secreto_aqui"
+
+# JWT (si se implementa autenticación con tokens)
+JWT_SECRET="tu_secreto_jwt_aqui"
+
+# Usuario Admin (opcional - para seed)
+# Si no se definen, se usarán los valores por defecto
+ADMIN_EMAIL="admin-vexler@gmail.com"
+ADMIN_PASSWORD="admin123"
+ADMIN_NOMBRE="admin-vexler"
 ```
+
+**Nota:** Las variables `ADMIN_*` son opcionales. Si no las defines, el seed usará los valores por defecto. Es recomendable cambiarlas en producción.
 
 **Nota:** Asegúrate de tener PostgreSQL instalado y corriendo. Crea la base de datos:
 ```sql

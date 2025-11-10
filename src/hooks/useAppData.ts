@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type {
   UsuarioUI,
   MatriculaUI,
@@ -6,122 +6,14 @@ import type {
   ExamenUI,
   EstadisticasDashboard,
 } from '../types';
+import { useUsuarios } from './useUsuarios';
+import { useDashboard } from './useDashboard';
+import { useMatriculas } from './useMatriculas';
+import { useAsistencia } from './useAsistencia';
+import { useExamenes } from './useExamenes';
+import { mapUsuariosToUI, mapMatriculasToUI, mapAsistenciasToUI, mapExamenesToUI } from '../utils/mappers';
 
-// Datos iniciales mock
-const initialUsers: UsuarioUI[] = [
-  {
-    id: 1,
-    name: 'CaAArlos Rodriguez',
-    nombre_completo: 'Carlos Rodríguez',
-    email: 'carlos@university.edu',
-    rol: 'estudiante',
-    estado: 'activo',
-    enrollmentDate: '2024-01-15',
-  },
-  {
-    id: 2,
-    name: 'María González',
-    nombre_completo: 'María González',
-    email: 'maria@university.edu',
-    rol: 'profesor',
-    estado: 'activo',
-    enrollmentDate: '2023-08-20',
-  },
-  {
-    id: 3,
-    name: 'Juan Pérez',
-    nombre_completo: 'Juan Pérez',
-    email: 'juan@university.edu',
-    rol: 'estudiante',
-    estado: 'inactivo',
-    enrollmentDate: '2024-02-01',
-  },
-];
-
-const initialEnrollments: MatriculaUI[] = [
-  {
-    id: 1,
-    student: 'Carlos Rodríguez',
-    course: 'Matemáticas Avanzadas',
-    semester: '2024-1',
-    status: 'enrolled',
-    date: '2024-01-20',
-  },
-  {
-    id: 2,
-    student: 'Ana Martínez',
-    course: 'Literatura Hispanoamericana',
-    semester: '2024-1',
-    status: 'pending',
-    date: '2024-01-22',
-  },
-  {
-    id: 3,
-    student: 'Luis Sánchez',
-    course: 'Física Cuántica',
-    semester: '2024-1',
-    status: 'enrolled',
-    date: '2024-01-25',
-  },
-];
-
-const initialAttendance: AsistenciaUI[] = [
-  {
-    id: 1,
-    student: 'Carlos Rodríguez',
-    course: 'Matemáticas Avanzadas',
-    date: '2024-03-15',
-    status: 'present',
-    qrCode: 'QR123456',
-  },
-  {
-    id: 2,
-    student: 'Ana Martínez',
-    course: 'Literatura Hispanoamericana',
-    date: '2024-03-15',
-    status: 'absent',
-    qrCode: 'QR789012',
-  },
-  {
-    id: 3,
-    student: 'Luis Sánchez',
-    course: 'Física Cuántica',
-    date: '2024-03-15',
-    status: 'present',
-    qrCode: 'QR345678',
-  },
-];
-
-const initialExams: ExamenUI[] = [
-  {
-    id: 1,
-    name: 'Examen Final - Matemáticas',
-    course: 'Matemáticas Avanzadas',
-    date: '2024-06-15',
-    duration: '2 horas',
-    students: 45,
-    status: 'scheduled',
-  },
-  {
-    id: 2,
-    name: 'Simulacro Parcial - Literatura',
-    course: 'Literatura Hispanoamericana',
-    date: '2024-04-10',
-    duration: '1.5 horas',
-    students: 32,
-    status: 'completed',
-  },
-  {
-    id: 3,
-    name: 'Prueba de Conceptos - Física',
-    course: 'Física Cuántica',
-    date: '2024-05-20',
-    duration: '3 horas',
-    students: 28,
-    status: 'scheduled',
-  },
-];
-
+// Datos iniciales para stats (hasta que el backend proporcione todos los campos)
 const initialStats: EstadisticasDashboard = {
   totalStudents: 1250,
   totalTeachers: 85,
@@ -132,99 +24,245 @@ const initialStats: EstadisticasDashboard = {
 };
 
 export const useAppData = () => {
-  const [users, setUsers] = useState<UsuarioUI[]>(initialUsers);
-  const [enrollments, setEnrollments] = useState<MatriculaUI[]>(initialEnrollments);
-  const [attendance, setAttendance] = useState<AsistenciaUI[]>(initialAttendance);
-  const [exams, setExams] = useState<ExamenUI[]>(initialExams);
+  // Hooks conectados con el backend
+  const {
+    usuarios: usuariosBackend,
+    loading: usuariosLoading,
+    error: usuariosError,
+    createUsuario: createUsuarioBackend,
+    updateUsuario: updateUsuarioBackend,
+    deleteUsuario: deleteUsuarioBackend,
+  } = useUsuarios();
+
+  const {
+    stats: statsBackend,
+    loading: statsLoading,
+    error: statsError,
+  } = useDashboard();
+
+  // Hooks para matrículas, asistencia y exámenes (conectados con backend)
+  const {
+    matriculas: matriculasBackend,
+    loading: matriculasLoading,
+    error: matriculasError,
+    createMatricula: createMatriculaBackend,
+    updateMatricula: updateMatriculaBackend,
+    deleteMatricula: deleteMatriculaBackend,
+  } = useMatriculas();
+
+  const {
+    asistencias: asistenciasBackend,
+    loading: asistenciasLoading,
+    error: asistenciasError,
+    createAsistencia: createAsistenciaBackend,
+  } = useAsistencia();
+
+  const {
+    examenes: examenesBackend,
+    loading: examenesLoading,
+    error: examenesError,
+    createExamen: createExamenBackend,
+    updateExamen: updateExamenBackend,
+    deleteExamen: deleteExamenBackend,
+  } = useExamenes();
+
+  // Mapear datos del backend a formato UI
+  const [users, setUsers] = useState<UsuarioUI[]>([]);
+  const [enrollments, setEnrollments] = useState<MatriculaUI[]>([]);
+  const [attendance, setAttendance] = useState<AsistenciaUI[]>([]);
+  const [exams, setExams] = useState<ExamenUI[]>([]);
+
+  useEffect(() => {
+    if (usuariosBackend.length > 0) {
+      setUsers(mapUsuariosToUI(usuariosBackend));
+    }
+  }, [usuariosBackend]);
+
+  useEffect(() => {
+    if (matriculasBackend.length > 0) {
+      setEnrollments(mapMatriculasToUI(matriculasBackend));
+    }
+  }, [matriculasBackend]);
+
+  useEffect(() => {
+    if (asistenciasBackend.length > 0) {
+      setAttendance(mapAsistenciasToUI(asistenciasBackend));
+    }
+  }, [asistenciasBackend]);
+
+  useEffect(() => {
+    if (examenesBackend.length > 0) {
+      setExams(mapExamenesToUI(examenesBackend));
+    }
+  }, [examenesBackend]);
+
+  // Combinar stats del backend con datos locales
   const [stats, setStats] = useState<EstadisticasDashboard>(initialStats);
 
-  // Usuarios
+  useEffect(() => {
+    if (statsBackend) {
+      setStats({
+        ...statsBackend,
+        // Mantener datos locales para campos que aún no están en el backend
+        activeEnrollments: enrollments.filter((e) => e.status === 'enrolled').length,
+        examsScheduled: exams.filter((e) => e.status === 'scheduled').length,
+        examsCompleted: exams.filter((e) => e.status === 'completed').length,
+      });
+    }
+  }, [statsBackend, enrollments, exams]);
+
+  // Usuarios - Conectados con backend
+  // Nota: Estas funciones son async pero se llaman sin await para no bloquear la UI
   const addUser = (user: Omit<UsuarioUI, 'id'>) => {
-    const newUser: UsuarioUI = {
-      ...user,
-      id: users.length > 0 ? Math.max(...users.map((u) => u.id)) + 1 : 1,
-    };
-    setUsers([...users, newUser]);
-    updateStats();
+    const { nombre_completo, email, contrasena, rol, estado } = user;
+    createUsuarioBackend({
+      nombre_completo,
+      email,
+      contrasena: contrasena || '',
+      rol,
+      estado,
+    }).catch((err) => {
+      console.error('Error al crear usuario:', err);
+    });
   };
 
   const updateUser = (id: number, userData: Partial<UsuarioUI>) => {
-    setUsers(users.map((u) => (u.id === id ? { ...u, ...userData } : u)));
-    updateStats();
+    const updateData: any = {};
+    if (userData.nombre_completo) updateData.nombre_completo = userData.nombre_completo;
+    if (userData.email) updateData.email = userData.email;
+    if (userData.rol) updateData.rol = userData.rol;
+    if (userData.estado) updateData.estado = userData.estado;
+    if (userData.contrasena) updateData.contrasena = userData.contrasena;
+
+    updateUsuarioBackend(id, updateData).catch((err) => {
+      console.error('Error al actualizar usuario:', err);
+    });
   };
 
   const deleteUser = (id: number) => {
-    setUsers(users.filter((u) => u.id !== id));
-    updateStats();
+    deleteUsuarioBackend(id).catch((err) => {
+      console.error('Error al eliminar usuario:', err);
+    });
   };
 
-  // Matrículas
+  // Matrículas - Conectadas con backend
   const addEnrollment = (enrollment: Omit<MatriculaUI, 'id'>) => {
-    const newEnrollment: MatriculaUI = {
-      ...enrollment,
-      id:
-        enrollments.length > 0
-          ? Math.max(...enrollments.map((e) => e.id)) + 1
-          : 1,
+    // El formulario ahora envía estudiante_id y curso_id directamente
+    const matriculaData: any = {
+      estudiante_id: (enrollment as any).estudiante_id,
+      curso_id: (enrollment as any).curso_id,
+      semestre: enrollment.semester,
+      estado: enrollment.status === 'enrolled' ? 'matriculado' : enrollment.status === 'pending' ? 'pendiente' : enrollment.status,
     };
-    setEnrollments([...enrollments, newEnrollment]);
-    updateStats();
+
+    // Agregar nota_final si existe
+    if (enrollment.grade !== undefined) {
+      matriculaData.nota_final = enrollment.grade;
+    }
+
+    if (!matriculaData.estudiante_id || !matriculaData.curso_id) {
+      console.error('Error: estudiante_id y curso_id son requeridos');
+      return;
+    }
+
+    createMatriculaBackend(matriculaData).catch((err) => {
+      console.error('Error al crear matrícula:', err);
+    });
   };
 
   const updateEnrollment = (id: number, enrollmentData: Partial<MatriculaUI>) => {
-    setEnrollments(
-      enrollments.map((e) => (e.id === id ? { ...e, ...enrollmentData } : e))
-    );
-    updateStats();
+    const updateData: any = {};
+    if (enrollmentData.semester) updateData.semestre = enrollmentData.semester;
+    if (enrollmentData.status) {
+      updateData.estado = 
+        enrollmentData.status === 'enrolled' ? 'matriculado' :
+        enrollmentData.status === 'pending' ? 'pendiente' :
+        enrollmentData.status === 'cancelled' ? 'cancelado' :
+        enrollmentData.status === 'completed' ? 'completado' :
+        'pendiente';
+    }
+    if ((enrollmentData as any).estudiante_id) updateData.estudiante_id = (enrollmentData as any).estudiante_id;
+    if ((enrollmentData as any).curso_id) updateData.curso_id = (enrollmentData as any).curso_id;
+    if (enrollmentData.grade !== undefined) updateData.nota_final = enrollmentData.grade;
+
+    updateMatriculaBackend(id, updateData).catch((err) => {
+      console.error('Error al actualizar matrícula:', err);
+    });
   };
 
   const deleteEnrollment = (id: number) => {
-    setEnrollments(enrollments.filter((e) => e.id !== id));
-    updateStats();
+    deleteMatriculaBackend(id).catch((err) => {
+      console.error('Error al eliminar matrícula:', err);
+    });
   };
 
-  // Asistencia
+  // Asistencia - Conectada con backend
   const addAttendance = (attendanceData: Omit<AsistenciaUI, 'id'>) => {
-    const newAttendance: AsistenciaUI = {
-      ...attendanceData,
-      id:
-        attendance.length > 0
-          ? Math.max(...attendance.map((a) => a.id)) + 1
-          : 1,
+    // Convertir formato UI a formato backend
+    const asistenciaData = {
+      matricula_id: (attendanceData as any).matricula_id || 1, // TODO: obtener del contexto
+      codigo_qr: attendanceData.qrCode,
+      fecha: attendanceData.date,
+      hora_entrada: new Date().toISOString(), // TODO: usar hora real
+      estado: attendanceData.status === 'present' ? 'presente' : 'ausente',
+      observaciones: null,
     };
-    setAttendance([...attendance, newAttendance]);
-    updateStats();
+
+    createAsistenciaBackend(asistenciaData).catch((err) => {
+      console.error('Error al crear asistencia:', err);
+    });
   };
 
-  // Exámenes
+  // Exámenes - Conectados con backend
   const addExam = (exam: Omit<ExamenUI, 'id'>) => {
-    const newExam: ExamenUI = {
-      ...exam,
-      id: exams.length > 0 ? Math.max(...exams.map((e) => e.id)) + 1 : 1,
+    // El formulario ahora envía todos los datos necesarios
+    // Combinar fecha y hora para crear un Date completo
+    const timeStr = (exam as any).time || '08:00:00';
+    const fechaHora = `${exam.date}T${timeStr}`;
+    
+    const examenData: any = {
+      curso_id: (exam as any).curso_id,
+      nombre: exam.name,
+      tipo: (exam as any).type || 'parcial',
+      fecha: exam.date,
+      hora_inicio: fechaHora, // Formato ISO: YYYY-MM-DDTHH:MM:SS
+      duracion_minutos: parseInt((exam.duration || '').replace(/\D/g, '')) || 120,
+      estado: exam.status === 'scheduled' ? 'programado' : exam.status === 'completed' ? 'completado' : 'programado',
+      puntaje_total: (exam as any).totalScore || 20,
     };
-    setExams([...exams, newExam]);
-    updateStats();
+
+    createExamenBackend(examenData).catch((err) => {
+      console.error('Error al crear examen:', err);
+    });
   };
 
   const updateExam = (id: number, examData: Partial<ExamenUI>) => {
-    setExams(exams.map((e) => (e.id === id ? { ...e, ...examData } : e)));
-    updateStats();
+    const updateData: any = {};
+    if (examData.name) updateData.nombre = examData.name;
+    if ((examData as any).curso_id) updateData.curso_id = (examData as any).curso_id;
+    if ((examData as any).type) updateData.tipo = (examData as any).type;
+    if (examData.date) updateData.fecha = examData.date;
+    if ((examData as any).time) updateData.hora_inicio = (examData as any).time;
+    if (examData.duration) {
+      updateData.duracion_minutos = parseInt(examData.duration.replace(/\D/g, ''));
+    }
+    if (examData.status) {
+      updateData.estado = 
+        examData.status === 'scheduled' ? 'programado' :
+        examData.status === 'completed' ? 'completado' :
+        examData.status === 'cancelled' ? 'cancelado' :
+        'programado';
+    }
+    if ((examData as any).totalScore) updateData.puntaje_total = (examData as any).totalScore;
+
+    updateExamenBackend(id, updateData).catch((err) => {
+      console.error('Error al actualizar examen:', err);
+    });
   };
 
   const deleteExam = (id: number) => {
-    setExams(exams.filter((e) => e.id !== id));
-    updateStats();
-  };
-
-  // Actualizar estadísticas
-  const updateStats = () => {
-    setStats({
-      totalStudents: users.filter((u) => u.rol === 'estudiante').length,
-      totalTeachers: users.filter((u) => u.rol === 'profesor').length,
-      activeEnrollments: enrollments.filter((e) => e.status === 'enrolled').length,
-      attendanceRate: stats.attendanceRate, // Mantener por ahora
-      examsScheduled: exams.filter((e) => e.status === 'scheduled').length,
-      examsCompleted: exams.filter((e) => e.status === 'completed').length,
+    deleteExamenBackend(id).catch((err) => {
+      console.error('Error al eliminar examen:', err);
     });
   };
 
@@ -234,6 +272,22 @@ export const useAppData = () => {
     attendance,
     exams,
     stats,
+    // Estados de loading y error
+    loading: {
+      usuarios: usuariosLoading,
+      stats: statsLoading,
+      matriculas: matriculasLoading,
+      asistencias: asistenciasLoading,
+      examenes: examenesLoading,
+    },
+    errors: {
+      usuarios: usuariosError,
+      stats: statsError,
+      matriculas: matriculasError,
+      asistencias: asistenciasError,
+      examenes: examenesError,
+    },
+    // Funciones CRUD
     addUser,
     updateUser,
     deleteUser,
