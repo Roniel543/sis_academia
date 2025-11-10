@@ -1,6 +1,6 @@
-import { User, FileText, Calendar, Clipboard, Check } from 'lucide-react';
+import { Calendar, Check, Clipboard, FileText, User } from 'lucide-react';
+import type { EstadisticasDashboard, ExamenUI, MatriculaUI } from '../../types';
 import { StatCard } from '../common/StatCard';
-import type { EstadisticasDashboard, MatriculaUI, ExamenUI } from '../../types';
 
 interface DashboardProps {
   stats: EstadisticasDashboard;
@@ -64,11 +64,10 @@ export const Dashboard = ({ stats, enrollments, exams }: DashboardProps) => {
                   <p className="text-sm text-gray-600">{enrollment.course}</p>
                 </div>
                 <span
-                  className={`px-2 py-1 text-xs rounded-full ${
-                    enrollment.status === 'enrolled'
+                  className={`px-2 py-1 text-xs rounded-full ${enrollment.status === 'enrolled'
                       ? 'bg-green-100 text-green-800'
                       : 'bg-yellow-100 text-yellow-800'
-                  }`}
+                    }`}
                 >
                   {enrollment.status === 'enrolled' ? 'Matriculado' : 'Pendiente'}
                 </span>

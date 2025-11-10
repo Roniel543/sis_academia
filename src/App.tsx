@@ -1,17 +1,20 @@
+import { Camera, Clipboard, CreditCard, FileText, User } from 'lucide-react';
 import { useState } from 'react';
-import { User, FileText, Camera, CreditCard, Clipboard } from 'lucide-react';
+import './App.css';
+import { AsistenciaTab } from './components/asistencia/AsistenciaTab';
+import { Login } from './components/auth/Login';
+import { CarnetTab } from './components/carnet/CarnetTab';
 import { Header } from './components/common/Header';
 import { NavigationTabs } from './components/common/NavigationTabs';
 import { Dashboard } from './components/dashboard/Dashboard';
-import { UsuariosTab } from './components/usuarios/UsuariosTab';
-import { MatriculaTab } from './components/matricula/MatriculaTab';
-import { AsistenciaTab } from './components/asistencia/AsistenciaTab';
-import { CarnetTab } from './components/carnet/CarnetTab';
 import { ExamenesTab } from './components/examenes/ExamenesTab';
+import { MatriculaTab } from './components/matricula/MatriculaTab';
+import { UsuariosTab } from './components/usuarios/UsuariosTab';
+import { useAuth } from './contexts/AuthContext';
 import { useAppData } from './hooks/useAppData';
-import './App.css';
 
 function App() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
   const {
     users,
@@ -40,6 +43,12 @@ function App() {
     { id: 'examenes', label: 'Exámenes', icon: Clipboard },
   ];
 
+  // Si no hay usuario logueado, mostrar login
+  if (!user) {
+    return <Login />;
+  }
+
+  // Si hay usuario logueado, mostrar el dashboard
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />

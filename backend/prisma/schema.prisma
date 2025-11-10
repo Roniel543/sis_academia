@@ -1,0 +1,207 @@
+// Prisma Schema para Sistema Académico
+// Configurado para PostgreSQL
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model Usuario {
+    id              Int           @id @default(autoincrement())
+    nombre_completo String
+    email           String        @unique
+    contrasena      String
+    rol             Rol
+    estado          EstadoUsuario @default(activo)
+    fecha_registro  DateTime?     @default(now())
+    ultima_conexion DateTime?
+
+    // Relaciones
+    estudiante Estudiante?
+    profesor   Profesor?
+    carnets    Carnet[]
+
+    @@map("usuarios")
+}
+
+model Estudiante {
+    id                Int     @id
+    codigo_estudiante String  @unique
+    carrera           String
+    semestre          Int
+    telefono          String?
+    direccion         String? @db.Text
+
+    // Relaciones
+    usuario    Usuario     @relation(fields: [id], references: [id], onDelete: Cascade)
+    matriculas Matricula[]
+
+    @@map("estudiantes")
+}
+
+model Profesor {
+    id              Int     @id
+    codigo_profesor String  @unique
+    departamento    String
+    especialidad    String?
+    titulo          String
+
+    // Relaciones
+    usuario Usuario @relation(fields: [id], references: [id], onDelete: Cascade)
+
+    @@map("profesores")
+}
+
+model Curso {
+    id              Int     @id @default(autoincrement())
+    codigo_curso    String  @unique
+    nombre          String
+    descripcion     String? @db.Text
+    creditos        Int
+    horas_semanales Int
+    nivel           String
+
+    // Relaciones
+    matriculas Matricula[]
+    examenes   Examen[]
+
+    @@map("cursos")
+}
+
+model Matricula {
+    id              Int             @id @default(autoincrement())
+    estudiante_id   Int
+    curso_id        Int
+    semestre        String
+    estado          EstadoMatricula @default(pendiente)
+    fecha_matricula DateTime?       @default(now())
+    nota_final      Decimal?        @db.Decimal(3, 1)
+
+    // Relaciones
+    estudiante Estudiante        @relation(fields: [estudiante_id], references: [id], onDelete: Cascade)
+    curso      Curso             @relation(fields: [curso_id], references: [id], onDelete: Cascade)
+    asistencia Asistencia[]
+    resultados ResultadoExamen[]
+
+    @@unique([estudiante_id, curso_id, semestre], name: "unique_matricula")
+    @@map("matriculas")
+}
+
+model Asistencia {
+    id            Int              @id @default(autoincrement())
+    matricula_id  Int
+    codigo_qr     String
+    fecha         DateTime         @db.Date
+    hora_entrada  DateTime         @db.Time
+    estado        EstadoAsistencia
+    observaciones String?          @db.Text
+
+    // Relaciones
+    matricula Matricula @relation(fields: [matricula_id], references: [id], onDelete: Cascade)
+
+    @@unique([matricula_id, fecha], name: "unique_asistencia")
+    @@map("asistencia")
+}
+
+model Examen {
+    id               Int          @id @default(autoincrement())
+    curso_id         Int
+    nombre           String
+    tipo             TipoExamen
+    fecha            DateTime     @db.Date
+    hora_inicio      DateTime     @db.Time
+    duracion_minutos Int
+    estado           EstadoExamen @default(programado)
+    puntaje_total    Decimal      @db.Decimal(5, 2)
+
+    // Relaciones
+    curso      Curso             @relation(fields: [curso_id], references: [id], onDelete: Cascade)
+    resultados ResultadoExamen[]
+
+    @@map("examenes")
+}
+
+model ResultadoExamen {
+    id                 Int             @id @default(autoincrement())
+    examen_id          Int
+    matricula_id       Int
+    puntaje_obtenido   Decimal         @db.Decimal(5, 2)
+    fecha_presentacion DateTime?
+    estado             EstadoResultado @default(ausente)
+
+    // Relaciones
+    examen    Examen    @relation(fields: [examen_id], references: [id], onDelete: Cascade)
+    matricula Matricula @relation(fields: [matricula_id], references: [id], onDelete: Cascade)
+
+    @@unique([examen_id, matricula_id], name: "unique_resultado")
+    @@map("resultados_examenes")
+}
+
+model Carnet {
+    id                Int          @id @default(autoincrement())
+    usuario_id        Int
+    codigo_carnet     String       @unique
+    codigo_qr         String
+    fecha_expedicion  DateTime     @db.Date
+    fecha_vencimiento DateTime     @db.Date
+    estado            EstadoCarnet @default(activo)
+
+    // Relaciones
+    usuario Usuario @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
+
+    @@map("carnets")
+}
+
+// Enums
+enum Rol {
+    estudiante
+    profesor
+    administrador
+}
+
+enum EstadoUsuario {
+    activo
+    inactivo
+}
+
+enum EstadoMatricula {
+    matriculado
+    pendiente
+    cancelado
+    completado
+}
+
+enum EstadoAsistencia {
+    presente
+    ausente
+    tardio
+}
+
+enum EstadoExamen {
+    programado
+    completado
+    cancelado
+}
+
+enum EstadoResultado {
+    presentado
+    ausente
+    reprobado
+}
+
+enum TipoExamen {
+    parcial
+    final
+    simulacro
+    quiz
+}
+
+enum EstadoCarnet {
+    activo
+    vencido
+    suspendido
+}
