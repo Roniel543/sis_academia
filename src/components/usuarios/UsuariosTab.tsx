@@ -9,6 +9,8 @@ interface UsuariosTabProps {
   onAddUser: (user: Omit<UsuarioUI, 'id'>) => void;
   onUpdateUser: (id: number, user: Partial<UsuarioUI>) => void;
   onDeleteUser: (id: number) => void;
+  loading?: boolean;
+  error?: string | null;
 }
 
 export const UsuariosTab = ({
@@ -16,6 +18,8 @@ export const UsuariosTab = ({
   onAddUser,
   onUpdateUser,
   onDeleteUser,
+  loading = false,
+  error = null,
 }: UsuariosTabProps) => {
   const [showModal, setShowModal] = useState(false);
   const [currentUser, setCurrentUser] = useState<UsuarioUI | null>(null);
@@ -64,6 +68,12 @@ export const UsuariosTab = ({
       <div className="bg-white rounded-xl shadow-sm border border-gray-100">
         <div className="p-6 border-b border-gray-200 flex justify-between items-center">
           <h2 className="text-xl font-semibold text-gray-900">Gestión de Usuarios</h2>
+          {loading && (
+            <span className="text-sm text-gray-500 flex items-center">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+              Cargando...
+            </span>
+          )}
           <button
             onClick={handleAdd}
             className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
@@ -74,6 +84,22 @@ export const UsuariosTab = ({
         </div>
 
         <div className="p-6">
+          {error && (
+            <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-red-800 font-medium">Error al cargar usuarios</p>
+              <p className="text-red-600 text-sm mt-1">{error}</p>
+            </div>
+          )}
+
+          {loading && users.length === 0 ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                <p className="mt-4 text-gray-600">Cargando usuarios...</p>
+              </div>
+            </div>
+          ) : (
+            <>
           <div className="flex space-x-4 mb-6">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -176,6 +202,8 @@ export const UsuariosTab = ({
               </tbody>
             </table>
           </div>
+          </>
+          )}
         </div>
       </div>
 

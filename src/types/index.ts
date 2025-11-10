@@ -116,8 +116,12 @@ export interface MatriculaUI {
   student: string;
   course: string;
   semester: string;
-  status: 'enrolled' | 'pending';
+  status: 'enrolled' | 'pending' | 'cancelled' | 'completed';
   date: string;
+  grade?: number;
+  // Campos adicionales para el backend
+  estudiante_id?: number;
+  curso_id?: number;
 }
 
 export interface AsistenciaUI {
@@ -127,6 +131,7 @@ export interface AsistenciaUI {
   date: string;
   status: 'present' | 'absent';
   qrCode: string;
+  matricula_id?: number;
 }
 
 export interface ExamenUI {
@@ -134,9 +139,14 @@ export interface ExamenUI {
   name: string;
   course: string;
   date: string;
+  time?: string;
   duration: string;
   students: number;
-  status: 'scheduled' | 'completed';
+  status: 'scheduled' | 'completed' | 'cancelled';
+  type?: TipoExamen;
+  totalScore?: number;
+  // Campos adicionales para el backend
+  curso_id?: number;
 }
 
 export interface EstadisticasDashboard {

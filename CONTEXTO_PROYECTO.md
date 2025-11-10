@@ -401,7 +401,8 @@ npm run preview          # Preview de producción
 
 ## 📞 Información de Contacto/Colaboración
 
-Este documento sirve como contexto para continuar el desarrollo del proyecto. Cualquier cambio importante debe actualizarse aquí.
+Este documento sirve como contexto para continuar el desarrollo del proyecto. Cualquier cambio importante debe actualiz
+arse aquí.
 
 **Última actualización:** Enero 2025
 

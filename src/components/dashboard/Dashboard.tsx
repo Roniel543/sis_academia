@@ -6,9 +6,31 @@ interface DashboardProps {
   stats: EstadisticasDashboard;
   enrollments: MatriculaUI[];
   exams: ExamenUI[];
+  loading?: boolean;
+  error?: string | null;
 }
 
-export const Dashboard = ({ stats, enrollments, exams }: DashboardProps) => {
+export const Dashboard = ({ stats, enrollments, exams, loading, error }: DashboardProps) => {
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Cargando estadísticas...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <p className="text-red-800 font-medium">Error al cargar estadísticas</p>
+        <p className="text-red-600 text-sm mt-1">{error}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

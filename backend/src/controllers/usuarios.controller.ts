@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import prisma from '../utils/prisma';
+import { hashPassword } from '../utils/password';
 
 // GET /api/usuarios - Listar todos los usuarios
 export const getUsuarios = async (req: Request, res: Response) => {
@@ -105,12 +106,15 @@ export const createUsuario = async (req: Request, res: Response) => {
             });
         }
 
+        // Hashear contraseña antes de guardar
+        const contrasenaHasheada = await hashPassword(contrasena);
+
         // Crear usuario
         const nuevoUsuario = await prisma.usuario.create({
             data: {
                 nombre_completo,
                 email,
-                contrasena, // Por ahora sin hash, luego implementaremos bcrypt
+                contrasena: contrasenaHasheada, // Contraseña hasheada con bcrypt
                 rol,
                 estado: estado || 'activo',
             },
@@ -182,7 +186,10 @@ export const updateUsuario = async (req: Request, res: Response) => {
         const datosActualizar: any = {};
         if (nombre_completo) datosActualizar.nombre_completo = nombre_completo;
         if (email) datosActualizar.email = email;
-        if (contrasena) datosActualizar.contrasena = contrasena;
+        if (contrasena) {
+            // Hashear contraseña si se proporciona
+            datosActualizar.contrasena = await hashPassword(contrasena);
+        }
         if (rol) datosActualizar.rol = rol;
         if (estado) datosActualizar.estado = estado;
 
