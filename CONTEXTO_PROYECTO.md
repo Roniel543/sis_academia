@@ -33,43 +33,79 @@ Sistema de gestión académica completo desarrollado con **React + TypeScript** 
 ## 📁 Estructura del Proyecto
 
 ```
-sis_academia/
+app-react-colegio/
 ├── src/                          # Frontend React
 │   ├── components/
 │   │   ├── auth/                 # Login
 │   │   ├── common/               # Header, Modal, NavigationTabs, StatCard
 │   │   ├── dashboard/            # Dashboard principal
 │   │   ├── usuarios/             # CRUD de usuarios
+│   │   ├── estudiantes/          # CRUD de estudiantes
+│   │   ├── cursos/               # CRUD de cursos
 │   │   ├── matricula/            # CRUD de matrículas
 │   │   ├── asistencia/           # Registro de asistencia QR
 │   │   ├── carnet/               # Carnets digitales
 │   │   └── examenes/             # CRUD de exámenes
 │   ├── contexts/
-│   │   └── AuthContext.tsx       # Contexto de autenticación
-│   ├── hooks/
-│   │   └── useAppData.ts         # Hook con datos MOCK (pendiente conectar con API)
+│   │   └── AuthContext.tsx       # Contexto de autenticación JWT
+│   ├── hooks/                    # Hooks personalizados conectados con API
+│   │   ├── useUsuarios.ts
+│   │   ├── useEstudiantes.ts
+│   │   ├── useCursos.ts
+│   │   ├── useMatriculas.ts
+│   │   ├── useAsistencia.ts
+│   │   ├── useExamenes.ts
+│   │   ├── useDashboard.ts
+│   │   └── useAppData.ts
+│   ├── services/
+│   │   └── api.ts                # Servicio API centralizado con JWT
 │   ├── types/
 │   │   └── index.ts              # Tipos TypeScript
-│   ├── data/
-│   │   └── mockUsers.ts          # Usuario admin de prueba
+│   ├── validations/              # Esquemas Zod para validación
+│   ├── utils/
+│   │   └── mappers.ts            # Utilidades de mapeo
 │   ├── App.tsx                   # Componente principal
 │   └── main.tsx                  # Punto de entrada
 │
 ├── backend/                      # Backend Node.js/Express
 │   ├── src/
-│   │   ├── controllers/          # Lógica de negocio
+│   │   ├── controllers/          # Lógica de negocio (todos los módulos)
 │   │   │   ├── auth.controller.ts
 │   │   │   ├── usuarios.controller.ts
+│   │   │   ├── estudiantes.controller.ts
+│   │   │   ├── profesores.controller.ts
+│   │   │   ├── cursos.controller.ts
+│   │   │   ├── matriculas.controller.ts
+│   │   │   ├── asistencia.controller.ts
+│   │   │   ├── examenes.controller.ts
+│   │   │   ├── carnets.controller.ts
 │   │   │   └── dashboard.controller.ts
-│   │   ├── routes/               # Rutas de la API
+│   │   ├── routes/               # Rutas de la API (todos los módulos)
 │   │   │   ├── auth.routes.ts
 │   │   │   ├── usuarios.routes.ts
+│   │   │   ├── estudiantes.routes.ts
+│   │   │   ├── profesores.routes.ts
+│   │   │   ├── cursos.routes.ts
+│   │   │   ├── matriculas.routes.ts
+│   │   │   ├── asistencia.routes.ts
+│   │   │   ├── examenes.routes.ts
+│   │   │   ├── carnets.routes.ts
 │   │   │   └── dashboard.routes.ts
+│   │   ├── middleware/          # Middlewares de seguridad
+│   │   │   ├── auth.middleware.ts    # JWT authentication
+│   │   │   ├── validation.middleware.ts  # Validación Zod
+│   │   │   └── logger.ts             # Logging de requests
 │   │   ├── utils/
-│   │   │   └── prisma.ts         # Cliente Prisma singleton
+│   │   │   ├── prisma.ts         # Cliente Prisma singleton
+│   │   │   ├── jwt.ts            # Utilidades JWT
+│   │   │   └── password.ts       # Hash de contraseñas (bcrypt)
+│   │   ├── validations/
+│   │   │   └── schemas.ts        # Esquemas Zod para validación
 │   │   └── index.ts              # Servidor Express
 │   ├── prisma/
-│   │   └── schema.prisma         # Esquema de base de datos
+│   │   ├── schema.prisma         # Esquema de base de datos
+│   │   ├── migrations/           # Migraciones ejecutadas
+│   │   └── seed.ts               # Script de seed (crea admin inicial)
 │   ├── .env                      # Variables de entorno (NO subir a Git)
 │   └── package.json
 │
@@ -106,7 +142,9 @@ sis_academia/
 - ✅ Navegación por pestañas
 - ✅ Validaciones con react-hook-form + Zod
 - ✅ Servicio API centralizado (`src/services/api.ts`)
-- ✅ Hooks personalizados para cada módulo
+- ✅ Hooks personalizados para cada módulo (useUsuarios, useEstudiantes, useCursos, useMatriculas, useAsistencia, useExamenes, useDashboard)
+- ✅ Validación de formularios con react-hook-form + Zod
+- ✅ Manejo de errores y estados de carga
 
 #### ⚠️ **Pendiente:**
 - ⚠️ Control de acceso por roles en frontend (backend sí tiene)
@@ -133,6 +171,7 @@ sis_academia/
 - ✅ Logging de requests
 - ✅ **Endpoints implementados (COMPLETOS):**
   - ✅ `POST /api/auth/login` - Autenticación con JWT
+  - ✅ `GET /api/auth/me` - Obtener usuario autenticado (requiere token)
   - ✅ `GET /api/usuarios` - Listar usuarios
   - ✅ `GET /api/usuarios/:id` - Obtener usuario
   - ✅ `POST /api/usuarios` - Crear usuario (con hash de contraseña)
@@ -268,6 +307,7 @@ npm run dev
 
 ### **Autenticación:**
 - `POST /api/auth/login` - Iniciar sesión (retorna JWT token)
+- `GET /api/auth/me` - Obtener información del usuario autenticado (requiere token)
 
 ### **Usuarios:**
 - `GET /api/usuarios` - Listar todos (requiere auth)
@@ -474,11 +514,15 @@ arse aquí.
 
 ## 🎓 Notas para el Desarrollo
 
-- El proyecto está en desarrollo activo
-- La base de datos está diseñada pero puede necesitar migraciones
-- El frontend está funcional pero usa datos mock
-- El backend tiene endpoints básicos implementados
-- La autenticación funciona pero es básica (sin hash de contraseñas)
+- ✅ El proyecto está en desarrollo activo y funcional
+- ✅ La base de datos está completamente configurada con Prisma y migraciones ejecutadas
+- ✅ El frontend está completamente conectado con el backend (NO usa datos mock)
+- ✅ Todos los endpoints CRUD están implementados y funcionando
+- ✅ La autenticación JWT está completamente implementada con hash de contraseñas (bcrypt)
+- ✅ Middleware de autenticación y autorización por roles funcionando
+- ✅ Validación de datos con Zod en frontend y backend
+- ⚠️ Pendiente: Control de acceso por roles en frontend (backend sí tiene protección)
+- ⚠️ Pendiente: Filtrado de datos según rol del usuario en frontend
 
-**Estado general:** ✅ Sistema funcional y completo. Frontend y backend conectados. Todos los endpoints CRUD implementados. Autenticación JWT funcionando. Base de datos operativa. ⚠️ Pendiente: Control de acceso por roles en frontend y filtrado de datos.
+**Estado general:** ✅ Sistema funcional y completo. Frontend y backend completamente conectados. Todos los endpoints CRUD implementados y probados. Autenticación JWT con hash de contraseñas funcionando. Base de datos operativa con Prisma. Middleware de seguridad implementado. ⚠️ Pendiente: Control de acceso por roles en frontend y filtrado de datos según rol.
 
