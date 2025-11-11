@@ -83,24 +83,36 @@ sis_academia/
 ### **Frontend (React):**
 
 #### ✅ **Completado:**
-- ✅ Sistema de autenticación básico (solo admin)
-  - Login funcional
-  - Sesión persistente (localStorage)
+- ✅ Sistema de autenticación con JWT
+  - Login funcional conectado con backend
+  - Sesión persistente (localStorage con token JWT)
   - Logout funcional
   - Header dinámico con usuario real
-- ✅ Dashboard con estadísticas
-- ✅ CRUD completo de Usuarios
-- ✅ CRUD completo de Matrículas
-- ✅ Registro de Asistencia (simulado)
-- ✅ Visualización de Carnets
-- ✅ CRUD completo de Exámenes
+  - Manejo de token expirado
+- ✅ Dashboard con estadísticas (conectado con backend)
+- ✅ CRUD completo de Usuarios (conectado con backend)
+- ✅ CRUD completo de Estudiantes (conectado con backend)
+- ✅ CRUD completo de Cursos (conectado con backend)
+- ✅ CRUD completo de Matrículas (conectado con backend)
+- ✅ Registro de Asistencia con QR Scanner (funcional)
+  - Escáner QR con cámara de PC
+  - Registro automático al escanear
+- ✅ Gestión de Carnets (conectado con backend)
+  - Crear, editar, eliminar carnets
+  - Generación automática de código QR
+  - Vista previa e impresión
+- ✅ CRUD completo de Exámenes (conectado con backend)
 - ✅ Diseño responsive con Tailwind CSS
 - ✅ Navegación por pestañas
+- ✅ Validaciones con react-hook-form + Zod
+- ✅ Servicio API centralizado (`src/services/api.ts`)
+- ✅ Hooks personalizados para cada módulo
 
 #### ⚠️ **Pendiente:**
-- ⚠️ **Datos MOCK**: Actualmente usa datos hardcodeados en `useAppData.ts`
-- ⚠️ **Conectar con Backend**: Reemplazar datos mock por llamadas reales a la API
-- ⚠️ Control de acceso por roles (profesor/estudiante) - Solo admin implementado
+- ⚠️ Control de acceso por roles en frontend (backend sí tiene)
+  - Todos los usuarios ven las mismas pestañas
+  - No hay vistas diferenciadas por rol
+  - No hay filtrado de datos por rol
 
 ---
 
@@ -111,25 +123,33 @@ sis_academia/
 - ✅ Prisma configurado para PostgreSQL
 - ✅ Schema de base de datos convertido a Prisma
 - ✅ Cliente Prisma generado
+- ✅ Migraciones ejecutadas (tablas creadas en PostgreSQL)
+- ✅ Seed script para crear admin inicial
 - ✅ Estructura de rutas y controladores
-- ✅ **Endpoints implementados:**
-  - ✅ `POST /api/auth/login` - Autenticación
+- ✅ Middleware de autenticación JWT
+- ✅ Middleware de autorización por roles
+- ✅ Validación con Zod
+- ✅ Hash de contraseñas con bcrypt
+- ✅ Logging de requests
+- ✅ **Endpoints implementados (COMPLETOS):**
+  - ✅ `POST /api/auth/login` - Autenticación con JWT
   - ✅ `GET /api/usuarios` - Listar usuarios
   - ✅ `GET /api/usuarios/:id` - Obtener usuario
-  - ✅ `POST /api/usuarios` - Crear usuario
+  - ✅ `POST /api/usuarios` - Crear usuario (con hash de contraseña)
   - ✅ `PUT /api/usuarios/:id` - Actualizar usuario
-  - ✅ `DELETE /api/usuarios/:id` - Eliminar usuario
+  - ✅ `DELETE /api/usuarios/:id` - Eliminar usuario (solo admin)
+  - ✅ `GET /api/estudiantes` - CRUD completo de estudiantes
+  - ✅ `GET /api/profesores` - CRUD completo de profesores
+  - ✅ `GET /api/cursos` - CRUD completo de cursos
+  - ✅ `GET /api/matriculas` - CRUD completo de matrículas
+  - ✅ `GET /api/asistencia` - CRUD completo de asistencia
+  - ✅ `GET /api/examenes` - CRUD completo de exámenes
+  - ✅ `GET /api/examenes/:id/resultados` - Resultados de exámenes
+  - ✅ `GET /api/carnets` - CRUD completo de carnets
   - ✅ `GET /api/dashboard/stats` - Estadísticas del dashboard
 
 #### ⚠️ **Pendiente:**
-- ⚠️ Endpoints de Matrículas
-- ⚠️ Endpoints de Asistencia
-- ⚠️ Endpoints de Exámenes
-- ⚠️ Endpoints de Cursos
-- ⚠️ Endpoints de Resultados de Exámenes
-- ⚠️ Endpoints de Carnets
-- ⚠️ Hash de contraseñas (actualmente se comparan en texto plano)
-- ⚠️ JWT tokens (opcional, para auth avanzada)
+- ⚠️ Nada crítico - Todos los endpoints principales están implementados
 
 ---
 
@@ -139,10 +159,9 @@ sis_academia/
 - ✅ Schema Prisma creado y validado
 - ✅ Cliente Prisma generado
 - ✅ Conexión configurada
-
-#### ⚠️ **Pendiente:**
-- ⚠️ Ejecutar migraciones para crear las tablas en PostgreSQL
-- ⚠️ Insertar datos iniciales (seed)
+- ✅ Migraciones ejecutadas (todas las tablas creadas)
+- ✅ Seed script ejecutado (admin creado)
+- ✅ Base de datos funcional y lista para usar
 
 ---
 
@@ -152,17 +171,23 @@ sis_academia/
 - **Email:** `admin-vexler@gmail.com`
 - **Contraseña:** `admin123`
 - **Rol:** `administrador`
+- **Estado:** Creado en base de datos con contraseña hasheada
 
 ### **Funcionamiento:**
 1. Frontend tiene login en `src/components/auth/Login.tsx`
 2. Backend valida credenciales en `POST /api/auth/login`
-3. Sesión se guarda en localStorage del navegador
-4. Sin login, no se puede acceder al dashboard
+3. Backend genera token JWT y lo retorna
+4. Frontend guarda token en localStorage
+5. Token se envía en header `Authorization: Bearer <token>` en cada request
+6. Backend valida token con middleware `authenticate`
+7. Sin login, no se puede acceder al dashboard
 
-### **Nota de Seguridad:**
-- ⚠️ Las contraseñas NO están hasheadas (se comparan en texto plano)
-- ⚠️ No hay JWT tokens (solo sesión en localStorage)
-- ⚠️ Pendiente implementar bcrypt para hash de contraseñas
+### **Seguridad Implementada:**
+- ✅ Contraseñas hasheadas con bcrypt (10 rounds)
+- ✅ JWT tokens con expiración (7 días por defecto)
+- ✅ Middleware de autenticación en todas las rutas protegidas
+- ✅ Middleware de autorización por roles (`requireRole`)
+- ✅ Validación de datos con Zod
 
 ---
 
@@ -242,23 +267,68 @@ npm run dev
 ### **Base URL:** `http://localhost:3000`
 
 ### **Autenticación:**
-- `POST /api/auth/login` - Iniciar sesión
+- `POST /api/auth/login` - Iniciar sesión (retorna JWT token)
 
 ### **Usuarios:**
-- `GET /api/usuarios` - Listar todos
-- `GET /api/usuarios/:id` - Obtener uno
-- `POST /api/usuarios` - Crear
-- `PUT /api/usuarios/:id` - Actualizar
-- `DELETE /api/usuarios/:id` - Eliminar
+- `GET /api/usuarios` - Listar todos (requiere auth)
+- `GET /api/usuarios/:id` - Obtener uno (requiere auth)
+- `POST /api/usuarios` - Crear (requiere auth, hash automático de contraseña)
+- `PUT /api/usuarios/:id` - Actualizar (requiere auth)
+- `DELETE /api/usuarios/:id` - Eliminar (requiere rol admin)
+
+### **Estudiantes:**
+- `GET /api/estudiantes` - Listar todos (requiere auth)
+- `GET /api/estudiantes/:id` - Obtener uno (requiere auth)
+- `POST /api/estudiantes` - Crear (requiere auth)
+- `PUT /api/estudiantes/:id` - Actualizar (requiere auth)
+- `DELETE /api/estudiantes/:id` - Eliminar (requiere rol admin)
+
+### **Profesores:**
+- `GET /api/profesores` - Listar todos (requiere auth)
+- `GET /api/profesores/:id` - Obtener uno (requiere auth)
+- `POST /api/profesores` - Crear (requiere auth)
+- `PUT /api/profesores/:id` - Actualizar (requiere auth)
+- `DELETE /api/profesores/:id` - Eliminar (requiere rol admin)
+
+### **Cursos:**
+- `GET /api/cursos` - Listar todos (requiere auth)
+- `GET /api/cursos/:id` - Obtener uno (requiere auth)
+- `POST /api/cursos` - Crear (requiere auth)
+- `PUT /api/cursos/:id` - Actualizar (requiere auth)
+- `DELETE /api/cursos/:id` - Eliminar (requiere rol admin)
+
+### **Matrículas:**
+- `GET /api/matriculas` - Listar todas (requiere auth)
+- `GET /api/matriculas/:id` - Obtener una (requiere auth)
+- `POST /api/matriculas` - Crear (requiere auth)
+- `PUT /api/matriculas/:id` - Actualizar (requiere auth)
+- `DELETE /api/matriculas/:id` - Eliminar (requiere rol admin)
+
+### **Asistencia:**
+- `GET /api/asistencia` - Listar todas (requiere auth)
+- `GET /api/asistencia/:id` - Obtener una (requiere auth)
+- `POST /api/asistencia` - Crear (requiere auth)
+- `PUT /api/asistencia/:id` - Actualizar (requiere auth)
+- `DELETE /api/asistencia/:id` - Eliminar (requiere rol admin)
+
+### **Exámenes:**
+- `GET /api/examenes` - Listar todos (requiere auth)
+- `GET /api/examenes/:id` - Obtener uno (requiere auth)
+- `POST /api/examenes` - Crear (requiere auth)
+- `PUT /api/examenes/:id` - Actualizar (requiere auth)
+- `DELETE /api/examenes/:id` - Eliminar (requiere rol admin)
+- `GET /api/examenes/:id/resultados` - Obtener resultados (requiere auth)
+- `POST /api/examenes/:id/resultados` - Crear/actualizar resultado (requiere auth)
+
+### **Carnets:**
+- `GET /api/carnets` - Listar todos (requiere auth, filtros: estado, usuario_id, codigo, codigo_qr)
+- `GET /api/carnets/:id` - Obtener uno (requiere auth)
+- `POST /api/carnets` - Crear (requiere auth, genera QR automático)
+- `PUT /api/carnets/:id` - Actualizar (requiere auth)
+- `DELETE /api/carnets/:id` - Eliminar (requiere rol admin)
 
 ### **Dashboard:**
-- `GET /api/dashboard/stats` - Estadísticas
-
-### **Pendientes:**
-- `/api/matriculas/*` - CRUD de matrículas
-- `/api/asistencia/*` - CRUD de asistencia
-- `/api/examenes/*` - CRUD de exámenes
-- `/api/cursos/*` - CRUD de cursos
+- `GET /api/dashboard/stats` - Estadísticas (requiere auth)
 
 ---
 
@@ -284,43 +354,35 @@ VITE_NODE_ENV="development"
 ## 🎯 Próximos Pasos Sugeridos
 
 ### **Prioridad Alta:**
-1. ✅ Conectar Frontend con Backend
-   - Crear servicio API en frontend
-   - Reemplazar datos mock en `useAppData.ts`
-   - Manejar estados de loading y error
-
-2. ⚠️ Implementar endpoints faltantes:
-   - Matrículas
-   - Asistencia
-   - Exámenes
-   - Cursos
-
-3. ⚠️ Hash de contraseñas:
-   - Implementar bcrypt en backend
-   - Actualizar login para comparar hashes
+1. ⚠️ Control de acceso por roles en frontend:
+   - Ocultar botones según rol del usuario
+   - Filtrar datos según rol (profesores solo ven sus cursos, estudiantes solo sus datos)
+   - Crear vistas diferenciadas por rol
 
 ### **Prioridad Media:**
-4. ⚠️ Control de acceso por roles:
-   - Vistas diferentes para profesor/estudiante
-   - Filtrado de datos según rol
+2. ⚠️ Mejoras de UX:
+   - Loading states mejorados
+   - Manejo de errores más robusto
+   - Confirmaciones antes de eliminar
 
-5. ⚠️ Migraciones de base de datos:
-   - Crear tablas en PostgreSQL
-   - Seed de datos iniciales
+3. ⚠️ Funcionalidades adicionales:
+   - Reportes y estadísticas avanzadas
+   - Exportación de datos
+   - Notificaciones
 
 ### **Prioridad Baja:**
-6. ⚠️ JWT tokens (opcional)
-7. ⚠️ Validación de datos más robusta
-8. ⚠️ Manejo de errores mejorado
+4. ⚠️ Optimizaciones:
+   - Paginación en listas grandes
+   - Búsqueda avanzada
+   - Filtros múltiples
 
 ---
 
 ## 🐛 Problemas Conocidos
 
-1. **Contraseñas en texto plano** - No están hasheadas
-2. **Datos mock en frontend** - No conectado con backend aún
-3. **Sin validación de roles** - Cualquiera puede acceder si tiene login
-4. **Sin migraciones ejecutadas** - Las tablas pueden no existir en PostgreSQL
+1. **Control de acceso en frontend** - Todos los usuarios ven las mismas pestañas y botones (el backend sí protege)
+2. **Filtrado de datos** - No se filtra según rol del usuario (profesores ven todos los estudiantes, no solo los de sus cursos)
+3. **Vistas diferenciadas** - No hay dashboards diferentes para profesor/estudiante
 
 ---
 
@@ -341,16 +403,18 @@ VITE_NODE_ENV="development"
 ```
 Frontend (React)
     ↓
-useAppData (datos MOCK) ← ⚠️ Pendiente conectar
+Servicio API (src/services/api.ts) - Maneja JWT tokens
     ↓
-Backend API (Express)
+Hooks personalizados (useUsuarios, useEstudiantes, etc.)
+    ↓
+Backend API (Express) - Valida JWT, autoriza por roles
     ↓
 Prisma ORM
     ↓
 PostgreSQL
 ```
 
-**Estado:** Frontend usa datos mock, backend está listo para recibir peticiones.
+**Estado:** ✅ Frontend completamente conectado con backend. Todos los módulos funcionan con datos reales.
 
 ---
 
@@ -416,5 +480,5 @@ arse aquí.
 - El backend tiene endpoints básicos implementados
 - La autenticación funciona pero es básica (sin hash de contraseñas)
 
-**Estado general:** ✅ Funcional para desarrollo, ⚠️ Pendiente conectar frontend-backend y completar endpoints faltantes.
+**Estado general:** ✅ Sistema funcional y completo. Frontend y backend conectados. Todos los endpoints CRUD implementados. Autenticación JWT funcionando. Base de datos operativa. ⚠️ Pendiente: Control de acceso por roles en frontend y filtrado de datos.
 

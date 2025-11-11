@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
-import { X, Camera, CheckCircle, AlertCircle } from 'lucide-react';
+import { AlertCircle, Camera, CheckCircle, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
 interface QRScannerProps {
     onScanSuccess: (qrCode: string) => void;
@@ -16,12 +16,17 @@ export const QRScanner = ({ onScanSuccess, onClose }: QRScannerProps) => {
     const [isScanning, setIsScanning] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [scannedCode, setScannedCode] = useState<string | null>(null);
+    const [isStopped, setIsStopped] = useState(false);
     const scannerId = 'qr-reader';
 
     useEffect(() => {
+        let isMounted = true;
+        let scannerInstance: Html5Qrcode | null = null;
+
         const startScanner = async () => {
             try {
                 const html5QrCode = new Html5Qrcode(scannerId);
+                scannerInstance = html5QrCode;
                 scannerRef.current = html5QrCode;
 
                 // Configuración del escáner
@@ -31,32 +36,67 @@ export const QRScanner = ({ onScanSuccess, onClose }: QRScannerProps) => {
                     aspectRatio: 1.0, // Aspecto cuadrado
                 };
 
-                // Iniciar escaneo desde la cámara trasera (o la disponible)
-                await html5QrCode.start(
-                    { facingMode: 'environment' }, // Cámara trasera
-                    config,
-                    (decodedText) => {
-                        // Código QR escaneado exitosamente
-                        setScannedCode(decodedText);
-                        setIsScanning(false);
-                        html5QrCode.stop();
-                        onScanSuccess(decodedText);
-                    },
-                    () => {
-                        // Ignorar errores de escaneo continuo (solo mostrar si es crítico)
-                    }
-                );
+                // Intentar primero con cámara trasera (móviles), luego frontal (PC)
+                let cameraIdOrConfig: string | { facingMode: string } = { facingMode: 'environment' };
 
-                setIsScanning(true);
-                setError(null);
+                // Para PC, intentar con cámara frontal primero
+                try {
+                    await html5QrCode.start(
+                        cameraIdOrConfig,
+                        config,
+                        (decodedText) => {
+                            // Código QR escaneado exitosamente
+                            if (isMounted && !isStopped) {
+                                setScannedCode(decodedText);
+                                setIsScanning(false);
+                                setIsStopped(true);
+                                html5QrCode.stop().catch(() => { });
+                                onScanSuccess(decodedText);
+                            }
+                        },
+                        () => {
+                            // Ignorar errores de escaneo continuo
+                        }
+                    );
+                } catch (err: any) {
+                    // Si falla con environment, intentar con user (cámara frontal)
+                    if (err.message?.includes('environment')) {
+                        cameraIdOrConfig = { facingMode: 'user' };
+                        await html5QrCode.start(
+                            cameraIdOrConfig,
+                            config,
+                            (decodedText) => {
+                                if (isMounted && !isStopped) {
+                                    setScannedCode(decodedText);
+                                    setIsScanning(false);
+                                    setIsStopped(true);
+                                    html5QrCode.stop().catch(() => { });
+                                    onScanSuccess(decodedText);
+                                }
+                            },
+                            () => { }
+                        );
+                    } else {
+                        throw err;
+                    }
+                }
+
+                if (isMounted) {
+                    setIsScanning(true);
+                    setError(null);
+                }
             } catch (err: any) {
                 console.error('Error al iniciar escáner:', err);
-                setError(
-                    err.message?.includes('Permission denied') || err.message?.includes('NotAllowedError')
-                        ? 'Permiso de cámara denegado. Por favor, permite el acceso a la cámara.'
-                        : 'Error al iniciar la cámara. Asegúrate de tener una cámara disponible.'
-                );
-                setIsScanning(false);
+                if (isMounted) {
+                    setError(
+                        err.message?.includes('Permission denied') || err.message?.includes('NotAllowedError')
+                            ? 'Permiso de cámara denegado. Por favor, permite el acceso a la cámara.'
+                            : err.message?.includes('NotFoundError') || err.message?.includes('No camera')
+                                ? 'No se encontró ninguna cámara. Asegúrate de tener una cámara conectada.'
+                                : 'Error al iniciar la cámara. Asegúrate de tener una cámara disponible y permisos otorgados.'
+                    );
+                    setIsScanning(false);
+                }
             }
         };
 
@@ -64,29 +104,50 @@ export const QRScanner = ({ onScanSuccess, onClose }: QRScannerProps) => {
 
         // Limpiar al desmontar
         return () => {
-            if (scannerRef.current) {
-                scannerRef.current
+            isMounted = false;
+            setIsStopped(true);
+            if (scannerInstance) {
+                scannerInstance
                     .stop()
                     .then(() => {
-                        scannerRef.current?.clear();
+                        scannerInstance?.clear();
                     })
-                    .catch((err) => {
-                        console.error('Error al detener escáner:', err);
+                    .catch((err: any) => {
+                        // Ignorar errores si el escáner no está corriendo
+                        const errorMsg = err?.message || err?.toString() || '';
+                        if (
+                            !errorMsg.includes('not running') &&
+                            !errorMsg.includes('not started') &&
+                            !errorMsg.includes('Scanner is not running') &&
+                            !errorMsg.includes('Scanner is not started')
+                        ) {
+                            console.error('Error al detener escáner:', err);
+                        }
                     });
             }
         };
     }, [onScanSuccess]);
 
     const handleStop = async () => {
+        setIsStopped(true);
         if (scannerRef.current) {
             try {
                 await scannerRef.current.stop();
                 scannerRef.current.clear();
-                setIsScanning(false);
-            } catch (err) {
-                console.error('Error al detener escáner:', err);
+            } catch (err: any) {
+                // Ignorar errores si el escáner no está corriendo
+                const errorMsg = err?.message || err?.toString() || '';
+                if (
+                    !errorMsg.includes('not running') &&
+                    !errorMsg.includes('not started') &&
+                    !errorMsg.includes('Scanner is not running') &&
+                    !errorMsg.includes('Scanner is not started')
+                ) {
+                    console.error('Error al detener escáner:', err);
+                }
             }
         }
+        setIsScanning(false);
         onClose();
     };
 
